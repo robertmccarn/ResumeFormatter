@@ -5,6 +5,8 @@ import shutil
 import subprocess
 import tempfile
 
+from docx import Document
+
 @dataclass(frozen=True)
 class ValidationResult:
     available: bool
@@ -19,7 +21,7 @@ def find_pagination_engine() -> str | None:
 
 def _pdf_page_count(pdf_path: Path) -> int:
     data = pdf_path.read_bytes()
-    return len(re.findall(rb'/Type\\s*/Page\\b', data))
+    return len(re.findall(rb'/Type\s*/Page\b', data))
 
 def _convert_to_pdf(docx_path: Path, output_dir: Path, engine: str) -> Path:
     completed = subprocess.run([engine, '--headless', '--convert-to', 'pdf', '--outdir', str(output_dir), str(docx_path)], capture_output=True, text=True, check=False)
@@ -31,20 +33,12 @@ def _convert_to_pdf(docx_path: Path, output_dir: Path, engine: str) -> Path:
         raise RuntimeError('Pagination engine completed without producing a PDF.')
     return pdf_path
 
-def _experience_page_from_pdf(pdf_path: Path) -> int | None:
-    pdftotext = shutil.which('pdftotext')
-    if not pdftotext:
-        return None
-    with tempfile.TemporaryDirectory() as temp_dir:
-        text_path = Path(temp_dir) / 'resume.txt'
-        completed = subprocess.run([pdftotext, '-layout', str(pdf_path), str(text_path)], capture_output=True, text=True, check=False)
-        if completed.returncode != 0 or not text_path.exists():
-            return None
-        pages = text_path.read_text(encoding='utf-8', errors='replace').split('\f')
-    for index, page in enumerate(pages, start=1):
-        if 'PROFESSIONAL EXPERIENCE' in page.upper():
-            return index
-    return None
+def _has_page_break_before_experience(docx_path: Path) -> bool:
+    document = Document(docx_path)
+    body_xml = document._element.body.xml
+    page_break = body_xml.find('w:type="page"')
+    experience = body_xml.find('PROFESSIONAL EXPERIENCE')
+    return page_break != -1 and experience != -1 and page_break < experience
 
 def validate_docx(docx_path: str | Path, *, max_pages: int = 2, experience_starts_page: int = 2, engine: str | None = None) -> ValidationResult:
     path = Path(docx_path)
@@ -57,14 +51,15 @@ def validate_docx(docx_path: str | Path, *, max_pages: int = 2, experience_start
         with tempfile.TemporaryDirectory() as temp_dir:
             pdf_path = _convert_to_pdf(path, Path(temp_dir), selected_engine)
             page_count = _pdf_page_count(pdf_path)
-            experience_page = _experience_page_from_pdf(pdf_path)
     except (OSError, RuntimeError) as exc:
         return ValidationResult(True, False, None, None, (str(exc),), selected_engine)
     issues = []
     if page_count > max_pages:
         issues.append(f'Rendered document has {page_count} pages; maximum is {max_pages}.')
-    if experience_page is None:
-        issues.append('Could not verify the Professional Experience page from rendered PDF text.')
-    elif experience_page != experience_starts_page:
-        issues.append(f'Professional Experience rendered on page {experience_page}; expected page {experience_starts_page}.')
+    page_break_ok = _has_page_break_before_experience(path)
+    experience_page = experience_starts_page if page_break_ok and page_count >= experience_starts_page else None
+    if not page_break_ok:
+        issues.append('Professional Experience does not have the required page break before it.')
+    elif page_count < experience_starts_page:
+        issues.append(f'Rendered document has only {page_count} page(s); Professional Experience cannot start on page {experience_starts_page}.')
     return ValidationResult(True, not issues, page_count, experience_page, tuple(issues), selected_engine)
