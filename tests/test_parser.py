@@ -1,0 +1,113 @@
+from resume_formatter.models import (
+    Contact,
+    SkillCategory,
+)
+from resume_formatter.parser import parse_resume
+
+
+SAMPLE_RESUME = """
+Robert McCarn
+robert@example.com | 555-555-5555 | Spring, TX | linkedin.com/in/robert
+
+Data Engineer
+
+SUMMARY
+Data Engineer with 4+ years of experience building and maintaining data solutions.
+Experienced in SQL Server, Azure, ETL, and data quality.
+
+CORE SKILLS
+Databases: SQL Server, Azure SQL
+Cloud: Azure Synapse, ADLS Gen2
+Languages: T-SQL, Python, PowerShell
+
+EDUCATION
+University of Houston | BBA, Management Information Systems | 2021
+
+CERTIFICATIONS
+Microsoft Fabric DP-700 | 2026
+AWS Certified AI Practitioner | 2025
+
+PROFESSIONAL EXPERIENCE
+TEKsystems Global Services | Data Engineer | 2022–Present
+- Developed T-SQL stored procedures supporting nightly data processing.
+- Supported Guidewire data modernization initiatives.
+- Performed query runtime and performance tuning.
+
+Retail Company | Store Manager | 2015–2018
+- Managed daily store operations.
+- Trained and supported employees.
+"""
+
+
+def test_parse_contact():
+    resume = parse_resume(SAMPLE_RESUME)
+
+    assert resume.contact.name == "Robert McCarn"
+    assert resume.contact.email == "robert@example.com"
+    assert resume.contact.phone == "555-555-5555"
+    assert resume.contact.location == "Spring, TX"
+    assert "linkedin.com/in/robert" in resume.contact.links
+
+
+def test_parse_headline():
+    resume = parse_resume(SAMPLE_RESUME)
+
+    assert resume.headline == "Data Engineer"
+
+
+def test_parse_summary():
+    resume = parse_resume(SAMPLE_RESUME)
+
+    assert "4+ years" in resume.summary
+    assert "SQL Server" in resume.summary
+
+
+def test_parse_skills():
+    resume = parse_resume(SAMPLE_RESUME)
+
+    assert len(resume.skills) == 3
+
+    assert resume.skills[0].name == "Databases"
+    assert "SQL Server" in resume.skills[0].skills
+    assert "Azure SQL" in resume.skills[0].skills
+
+    assert resume.skills[1].name == "Cloud"
+    assert "Azure Synapse" in resume.skills[1].skills
+
+
+def test_parse_education():
+    resume = parse_resume(SAMPLE_RESUME)
+
+    assert len(resume.education) == 1
+    assert resume.education[0].institution == "University of Houston"
+
+
+def test_parse_certifications():
+    resume = parse_resume(SAMPLE_RESUME)
+
+    assert len(resume.certifications) == 2
+    assert resume.certifications[0].name == "Microsoft Fabric DP-700"
+    assert resume.certifications[0].date == "2026"
+
+
+def test_parse_experience():
+    resume = parse_resume(SAMPLE_RESUME)
+
+    assert len(resume.experience) == 2
+
+    first = resume.experience[0]
+
+    assert first.company == "TEKsystems Global Services"
+    assert first.title == "Data Engineer"
+    assert first.dates == "2022–Present"
+
+    assert len(first.bullets) == 3
+    assert "T-SQL stored procedures" in first.bullets[0].text
+
+
+def test_parse_empty_resume():
+    try:
+        parse_resume("")
+        assert False, "Expected ValueError"
+    except ValueError:
+        pass
