@@ -6,6 +6,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Inches, Pt
 
 from .models import Resume
+from .optimizer import NORMAL_PROFILE, LayoutProfile
 
 
 FONT_NAME = "Arial"
@@ -14,16 +15,13 @@ PAGE_MARGIN = Inches(0.6)
 
 NAME_SIZE = Pt(18)
 HEADLINE_SIZE = Pt(11)
-BODY_SIZE = Pt(10)
-SECTION_SIZE = Pt(11)
 CONTACT_SIZE = Pt(9)
 
-SPACING_AFTER_BODY = Pt(3)
-SPACING_AFTER_SECTION = Pt(4)
-SPACING_AFTER_ENTRY = Pt(5)
 
-
-def configure_document(document: Document) -> None:
+def configure_document(
+    document: Document,
+    profile: LayoutProfile = NORMAL_PROFILE,
+) -> None:
     section = document.sections[0]
 
     section.top_margin = PAGE_MARGIN
@@ -35,8 +33,10 @@ def configure_document(document: Document) -> None:
 
     normal = styles["Normal"]
     normal.font.name = FONT_NAME
-    normal.font.size = BODY_SIZE
-    normal.paragraph_format.space_after = SPACING_AFTER_BODY
+    normal.font.size = Pt(profile.body_font_pt)
+    normal.paragraph_format.space_after = Pt(
+        profile.body_spacing_after_pt
+    )
     normal.paragraph_format.line_spacing = 1.0
 
     if "Resume Bullet" not in styles:
@@ -49,10 +49,12 @@ def configure_document(document: Document) -> None:
 
     bullet_style.base_style = normal
     bullet_style.font.name = FONT_NAME
-    bullet_style.font.size = BODY_SIZE
+    bullet_style.font.size = Pt(profile.body_font_pt)
     bullet_style.paragraph_format.left_indent = Inches(0.18)
     bullet_style.paragraph_format.first_line_indent = Inches(-0.12)
-    bullet_style.paragraph_format.space_after = Pt(2)
+    bullet_style.paragraph_format.space_after = Pt(
+        profile.bullet_spacing_after_pt
+    )
     bullet_style.paragraph_format.line_spacing = 1.0
 
 
@@ -124,89 +126,115 @@ def add_headline(document: Document, headline: str) -> None:
     )
 
 
-def add_section_heading(document: Document, title: str) -> None:
+def add_section_heading(
+    document: Document,
+    title: str,
+    profile: LayoutProfile,
+) -> None:
     paragraph = document.add_paragraph()
-    paragraph.paragraph_format.space_before = Pt(4)
-    paragraph.paragraph_format.space_after = SPACING_AFTER_SECTION
+    paragraph.paragraph_format.space_before = Pt(
+        profile.section_spacing_before_pt
+    )
+    paragraph.paragraph_format.space_after = Pt(
+        profile.section_spacing_after_pt
+    )
 
     add_run(
         paragraph,
         title.upper(),
         bold=True,
-        size=SECTION_SIZE,
+        size=Pt(profile.section_font_pt),
     )
 
 
-def add_summary(document: Document, summary: str) -> None:
+def add_summary(
+    document: Document,
+    summary: str,
+    profile: LayoutProfile,
+) -> None:
     if not summary:
         return
 
-    add_section_heading(document, "Summary")
+    add_section_heading(document, "Summary", profile)
 
     paragraph = document.add_paragraph()
-    paragraph.paragraph_format.space_after = Pt(4)
+    paragraph.paragraph_format.space_after = Pt(
+        profile.body_spacing_after_pt
+    )
 
     add_run(
         paragraph,
         summary,
-        size=BODY_SIZE,
+        size=Pt(profile.body_font_pt),
     )
 
 
-def add_skills(document: Document, resume: Resume) -> None:
+def add_skills(
+    document: Document,
+    resume: Resume,
+    profile: LayoutProfile,
+) -> None:
     if not resume.skills:
         return
 
-    add_section_heading(document, "Core Skills")
+    add_section_heading(document, "Core Skills", profile)
 
     for category in resume.skills:
         paragraph = document.add_paragraph()
-        paragraph.paragraph_format.space_after = Pt(2)
+        paragraph.paragraph_format.space_after = Pt(
+            profile.body_spacing_after_pt
+        )
 
         if category.name:
             add_run(
                 paragraph,
                 f"{category.name}: ",
                 bold=True,
-                size=BODY_SIZE,
+                size=Pt(profile.body_font_pt),
             )
 
         add_run(
             paragraph,
             ", ".join(category.skills),
-            size=BODY_SIZE,
+            size=Pt(profile.body_font_pt),
         )
 
 
-def add_education(document: Document, resume: Resume) -> None:
+def add_education(
+    document: Document,
+    resume: Resume,
+    profile: LayoutProfile,
+) -> None:
     if not resume.education:
         return
 
-    add_section_heading(document, "Education")
+    add_section_heading(document, "Education", profile)
 
     for education in resume.education:
         paragraph = document.add_paragraph()
-        paragraph.paragraph_format.space_after = Pt(2)
+        paragraph.paragraph_format.space_after = Pt(
+            profile.body_spacing_after_pt
+        )
 
         add_run(
             paragraph,
             education.institution,
             bold=True,
-            size=BODY_SIZE,
+            size=Pt(profile.body_font_pt),
         )
 
         if education.degree:
             add_run(
                 paragraph,
                 f" | {education.degree}",
-                size=BODY_SIZE,
+                size=Pt(profile.body_font_pt),
             )
 
         if education.dates:
             add_run(
                 paragraph,
                 f" | {education.dates}",
-                size=BODY_SIZE,
+                size=Pt(profile.body_font_pt),
             )
 
         for detail in education.details:
@@ -214,46 +242,60 @@ def add_education(document: Document, resume: Resume) -> None:
             add_run(
                 bullet,
                 detail,
-                size=BODY_SIZE,
+                size=Pt(profile.body_font_pt),
             )
 
 
-def add_certifications(document: Document, resume: Resume) -> None:
+def add_certifications(
+    document: Document,
+    resume: Resume,
+    profile: LayoutProfile,
+) -> None:
     if not resume.certifications:
         return
 
-    add_section_heading(document, "Certifications")
+    add_section_heading(document, "Certifications", profile)
 
     for certification in resume.certifications:
         paragraph = document.add_paragraph()
-        paragraph.paragraph_format.space_after = Pt(2)
+        paragraph.paragraph_format.space_after = Pt(
+            profile.body_spacing_after_pt
+        )
 
         add_run(
             paragraph,
             certification.name,
-            size=BODY_SIZE,
+            size=Pt(profile.body_font_pt),
         )
 
         if certification.issuer:
             add_run(
                 paragraph,
                 f" | {certification.issuer}",
-                size=BODY_SIZE,
+                size=Pt(profile.body_font_pt),
             )
 
         if certification.date:
             add_run(
                 paragraph,
                 f" | {certification.date}",
-                size=BODY_SIZE,
+                size=Pt(profile.body_font_pt),
             )
 
 
-def add_experience(document: Document, resume: Resume) -> None:
+def add_experience(
+    document: Document,
+    resume: Resume,
+    profile: LayoutProfile,
+) -> None:
     if not resume.experience:
         return
 
-    add_section_heading(document, "Professional Experience")
+    add_section_heading(
+        document,
+        "Professional Experience",
+        profile,
+    )
 
     for experience in resume.experience:
         paragraph = document.add_paragraph()
@@ -263,31 +305,33 @@ def add_experience(document: Document, resume: Resume) -> None:
             paragraph,
             experience.company,
             bold=True,
-            size=BODY_SIZE,
+            size=Pt(profile.body_font_pt),
         )
 
         if experience.location:
             add_run(
                 paragraph,
                 f" | {experience.location}",
-                size=BODY_SIZE,
+                size=Pt(profile.body_font_pt),
             )
 
         paragraph = document.add_paragraph()
-        paragraph.paragraph_format.space_after = Pt(2)
+        paragraph.paragraph_format.space_after = Pt(
+            profile.body_spacing_after_pt
+        )
 
         add_run(
             paragraph,
             experience.title,
             bold=True,
-            size=BODY_SIZE,
+            size=Pt(profile.body_font_pt),
         )
 
         if experience.dates:
             add_run(
                 paragraph,
                 f" | {experience.dates}",
-                size=BODY_SIZE,
+                size=Pt(profile.body_font_pt),
             )
 
         for bullet in experience.bullets:
@@ -298,39 +342,45 @@ def add_experience(document: Document, resume: Resume) -> None:
             add_run(
                 paragraph,
                 bullet.text,
-                size=BODY_SIZE,
+                size=Pt(profile.body_font_pt),
             )
 
-        # Small separation between employers.
         if experience is not resume.experience[-1]:
             spacer = document.add_paragraph()
-            spacer.paragraph_format.space_after = Pt(0)
+            spacer.paragraph_format.space_after = Pt(
+                profile.entry_spacing_after_pt
+            )
             spacer.paragraph_format.space_before = Pt(0)
 
 
-def render_resume(resume: Resume, output_path: str | Path) -> Path:
+def render_resume(
+    resume: Resume,
+    output_path: str | Path,
+    profile: LayoutProfile = NORMAL_PROFILE,
+) -> Path:
     """
     Render a structured Resume into a deterministic DOCX file.
 
     Professional Experience intentionally begins on page 2.
+    The selected LayoutProfile controls density only; resume content
+    is never modified by the renderer.
     """
 
     output_path = Path(output_path)
 
     document = Document()
-    configure_document(document)
+    configure_document(document, profile)
 
     add_header(document, resume)
     add_headline(document, resume.headline)
-    add_summary(document, resume.summary)
-    add_skills(document, resume)
-    add_education(document, resume)
-    add_certifications(document, resume)
+    add_summary(document, resume.summary, profile)
+    add_skills(document, resume, profile)
+    add_education(document, resume, profile)
+    add_certifications(document, resume, profile)
 
-    # Experience is intentionally forced onto page 2.
     document.add_page_break()
 
-    add_experience(document, resume)
+    add_experience(document, resume, profile)
 
     output_path.parent.mkdir(
         parents=True,
