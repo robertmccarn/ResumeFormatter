@@ -11,6 +11,7 @@ from resume_formatter.models import (
     Resume,
     SkillCategory,
 )
+from resume_formatter.optimizer import COMPACT_PROFILE, NORMAL_PROFILE
 from resume_formatter.renderer import render_resume
 
 
@@ -116,6 +117,107 @@ def test_render_resume_has_page_break_before_experience(
         'w:type="page"'
     )
 
+    experience_position = body_xml.find(
+        "PROFESSIONAL EXPERIENCE"
+    )
+
+    assert page_break_position != -1
+    assert experience_position != -1
+    assert page_break_position < experience_position
+
+
+
+def test_render_resume_uses_selected_profile(tmp_path: Path):
+    output = tmp_path / "compact.docx"
+
+    render_resume(
+        make_resume(),
+        output,
+        profile=COMPACT_PROFILE,
+    )
+
+    document = Document(output)
+
+    normal = document.styles["Normal"]
+
+    assert normal.font.size.pt == COMPACT_PROFILE.body_font_pt
+    assert (
+        normal.paragraph_format.space_after.pt
+        == COMPACT_PROFILE.body_spacing_after_pt
+    )
+
+
+def test_render_resume_normal_profile_preserves_existing_defaults(
+    tmp_path: Path,
+):
+    output = tmp_path / "normal.docx"
+
+    render_resume(
+        make_resume(),
+        output,
+        profile=NORMAL_PROFILE,
+    )
+
+    document = Document(output)
+
+    normal = document.styles["Normal"]
+
+    assert normal.font.size.pt == NORMAL_PROFILE.body_font_pt
+    assert (
+        normal.paragraph_format.space_after.pt
+        == NORMAL_PROFILE.body_spacing_after_pt
+    )
+
+
+def test_render_profiles_preserve_resume_text(tmp_path: Path):
+    normal_output = tmp_path / "normal.docx"
+    compact_output = tmp_path / "compact.docx"
+
+    resume = make_resume()
+
+    render_resume(
+        resume,
+        normal_output,
+        profile=NORMAL_PROFILE,
+    )
+    render_resume(
+        resume,
+        compact_output,
+        profile=COMPACT_PROFILE,
+    )
+
+    normal_document = Document(normal_output)
+    compact_document = Document(compact_output)
+
+    normal_text = [
+        paragraph.text
+        for paragraph in normal_document.paragraphs
+    ]
+    compact_text = [
+        paragraph.text
+        for paragraph in compact_document.paragraphs
+    ]
+
+    assert normal_text == compact_text
+
+
+def test_render_profiles_keep_experience_on_page_two(
+    tmp_path: Path,
+):
+    output = tmp_path / "compact.docx"
+
+    render_resume(
+        make_resume(),
+        output,
+        profile=COMPACT_PROFILE,
+    )
+
+    document = Document(output)
+    body_xml = document._element.body.xml
+
+    page_break_position = body_xml.find(
+        'w:type="page"'
+    )
     experience_position = body_xml.find(
         "PROFESSIONAL EXPERIENCE"
     )
