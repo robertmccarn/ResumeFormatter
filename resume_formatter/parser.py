@@ -366,55 +366,130 @@ def _is_role_line(line: str) -> bool:
 
 
 def parse_experience(lines: list[str]) -> list[Experience]:
-    """Parse both explicitly bulleted and clean, bulletless pasted resumes."""
-    normalized = [normalize_line(line) if line else "" for line in lines]
-    experiences: list[Experience] = []
+    """Parse explicit bullets and clean pasted resumes without bullet markers."""
+    normalized = [
+        normalize_line(line) if line else ""
+        for line in lines
+    ]
 
-    current: Experience | None = None
-    pending_header: list[str] = []
+    role_positions = [
+        index
+        for index, line in enumerate(normalized)
+        if line and _is_role_line(line)
+    ]
 
-    for line in normalized:
-        if not line:
-            continue
+    # If explicit bullets are present, retain the straightforward parser.
+    if any(is_bullet(line) for line in normalized if line):
+        experiences: list[Experience] = []
+        current: Experience | None = None
+        pending_header: list[str] = []
 
-        if is_bullet(line):
+        for line in normalized:
+            if not line:
+                continue
+
+            if is_bullet(line):
+                if current is None:
+                    if pending_header:
+                        current = parse_experience_header_block(
+                            pending_header
+                        )
+                        pending_header = []
+                    else:
+                        continue
+
+                current.bullets.append(
+                    Bullet(text=clean_bullet(line))
+                )
+                continue
+
             if current is None:
-                if pending_header:
-                    current = parse_experience_header_block(pending_header)
+                pending_header.append(line)
+                if _is_role_line(line):
+                    current = parse_experience_header_block(
+                        pending_header
+                    )
                     pending_header = []
-                else:
-                    continue
-
-            current.bullets.append(Bullet(text=clean_bullet(line)))
-            continue
-
-        if current is None:
-            pending_header.append(line)
+                continue
 
             if _is_role_line(line):
-                current = parse_experience_header_block(pending_header)
-                pending_header = []
+                experiences.append(current)
+                pending_header = [line]
+                current = None
+                continue
 
-            continue
+            current.bullets.append(Bullet(text=line))
 
-        # Once a role has started, a new role/date line means the current
-        # experience has ended. The immediately preceding non-bullet line
-        # becomes the next company's header.
-        if _is_role_line(line):
+        if current is not None:
             experiences.append(current)
-            pending_header = [line]
-            current = None
-            continue
+        elif pending_header:
+            experiences.append(
+                parse_experience_header_block(pending_header)
+            )
 
-        # Unbulleted narrative lines are treated as experience bullets.
-        current.bullets.append(Bullet(text=line))
+        return experiences
 
-    if current is not None:
-        experiences.append(current)
-    elif pending_header:
-        experiences.append(parse_experience_header_block(pending_header))
+    # Bulletless paste mode:
+    # role/date lines delimit jobs; the nonempty line immediately before
+    # each role/date line is treated as the company/engagement header.
+    if role_positions:
+        experiences: list[Experience] = []
 
-    return experiences
+        for role_index, role_position in enumerate(role_positions):
+            previous_nonempty = next(
+                (
+                    index
+                    for index in range(role_position - 1, -1, -1)
+                    if normalized[index]
+                ),
+                None,
+            )
+
+            if previous_nonempty is None:
+                header_lines = [normalized[role_position]]
+            else:
+                header_lines = [
+                    normalized[previous_nonempty],
+                    normalized[role_position],
+                ]
+
+            experience = parse_experience_header_block(header_lines)
+
+            next_role_position = (
+                role_positions[role_index + 1]
+                if role_index + 1 < len(role_positions)
+                else len(normalized)
+            )
+
+            # The company line immediately before the next role belongs to
+            # the next entry, not to the current entry's bullets.
+            next_company_index = next(
+                (
+                    index
+                    for index in range(
+                        next_role_position - 1,
+                        role_position,
+                        -1,
+                    )
+                    if normalized[index]
+                ),
+                next_role_position,
+            )
+
+            bullet_end = next_company_index
+
+            for index in range(role_position + 1, bullet_end):
+                line = normalized[index]
+                if line:
+                    experience.bullets.append(
+                        Bullet(text=clean_bullet(line))
+                    )
+
+            experiences.append(experience)
+
+        return experiences
+
+    return []
 
 
 def parse_resume(text: str) -> Resume:
