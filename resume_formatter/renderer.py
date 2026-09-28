@@ -71,7 +71,7 @@ def configure_document(
     bullet_style.paragraph_format.space_after = Pt(
         max(profile.bullet_spacing_after_pt, 2.5)
     )
-    bullet_style.paragraph_format.line_spacing = 1.0
+    bullet_style.paragraph_format.line_spacing = profile.experience_line_spacing
 
 
 def add_run(
