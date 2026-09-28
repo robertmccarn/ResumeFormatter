@@ -3,6 +3,7 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 
 from docx import Document
@@ -11,8 +12,6 @@ try:
     import win32com.client
 except ImportError:  # pragma: no cover - environments without pywin32
     win32com = None
-else:
-    win32com = win32com.client
 
 
 @dataclass(frozen=True)
@@ -26,17 +25,10 @@ class ValidationResult:
 
 
 def _word_is_available() -> bool:
-    if win32com is None:
-        return False
-    try:
-        word = win32com.DispatchEx("Word.Application")
-        try:
-            word.Visible = False
-        finally:
-            word.Quit()
-        return True
-    except Exception:
-        return False
+    # Do not instantiate Word here. COM startup/shutdown can fail at the RPC
+    # layer and destabilize the host process. Actual Word work is isolated in
+    # resume_formatter.word_pagination.
+    return win32com is not None
 
 
 def find_pagination_engine() -> str | None:
@@ -80,33 +72,23 @@ def _word_page_count(docx_path: Path) -> int:
     if win32com is None:
         raise RuntimeError("Microsoft Word validation requires pywin32.")
 
-    word = None
-    document = None
+    completed = subprocess.run(
+        [sys.executable, "-m", "resume_formatter.word_pagination", str(docx_path)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if completed.returncode != 0:
+        detail = completed.stderr.strip() or completed.stdout.strip()
+        raise RuntimeError(detail or "Microsoft Word pagination worker failed.")
+
+    output = completed.stdout.strip()
     try:
-        word = win32com.DispatchEx("Word.Application")
-        word.Visible = False
-        word.DisplayAlerts = 0
-        document = word.Documents.Open(
-            str(docx_path.resolve()),
-            ReadOnly=True,
-            AddToRecentFiles=False,
-        )
-        document.Repaginate()
-        # wdStatisticPages = 2.
-        return int(document.ComputeStatistics(2))
-    except Exception as exc:
-        raise RuntimeError(f"Microsoft Word pagination failed: {exc}") from exc
-    finally:
-        if document is not None:
-            try:
-                document.Close(False)
-            except Exception:
-                pass
-        if word is not None:
-            try:
-                word.Quit()
-            except Exception:
-                pass
+        return int(output)
+    except ValueError as exc:
+        raise RuntimeError(
+            "Microsoft Word pagination worker returned an invalid page count."
+        ) from exc
 
 
 def _has_page_break_before_experience(docx_path: Path) -> bool:
