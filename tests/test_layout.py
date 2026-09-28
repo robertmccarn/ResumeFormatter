@@ -98,6 +98,21 @@ def test_measure_resume_contains_all_sections():
     ]
 
 
+def test_experience_subtitle_is_included_in_layout_measurement():
+    resume = make_resume()
+    resume.experience[0].subtitle = "Berkshire Hathaway Engagement"
+
+    with_subtitle = measure_resume(resume)
+
+    resume.experience[0].subtitle = ""
+    without_subtitle = measure_resume(resume)
+
+    assert (
+        with_subtitle.sections[-1].characters
+        > without_subtitle.sections[-1].characters
+    )
+
+
 def test_experience_is_assigned_to_page_two():
     report = measure_resume(make_resume())
 
