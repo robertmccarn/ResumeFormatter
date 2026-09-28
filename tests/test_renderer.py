@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from docx import Document
-from docx.shared import RGBColor
 
 from resume_formatter.models import (
     Bullet,
@@ -56,6 +55,7 @@ def make_resume() -> Resume:
         experience=[
             Experience(
                 company="TEKsystems Global Services",
+                subtitle="Berkshire Hathaway Engagement",
                 title="Data Engineer",
                 dates="2022–Present",
                 bullets=[
@@ -101,6 +101,7 @@ def test_render_resume_contains_expected_content(tmp_path: Path):
     assert "Microsoft Fabric DP-700" in text
     assert "PROFESSIONAL EXPERIENCE" in text
     assert "TEKsystems Global Services" in text
+    assert "Berkshire Hathaway Engagement" in text
 
 
 def test_render_resume_uses_bullet_markers_for_experience(
@@ -135,6 +136,50 @@ def test_render_resume_uses_blue_visual_language(tmp_path: Path):
     assert name_run.font.color.rgb == NAVY
     assert headline_run.font.color.rgb == BLUE
     assert summary_heading.runs[0].font.color.rgb == BLUE
+
+
+def test_render_resume_uses_subtitle_hierarchy(tmp_path: Path):
+    output = tmp_path / "resume.docx"
+
+    render_resume(make_resume(), output)
+
+    document = Document(output)
+
+    subtitle = next(
+        paragraph
+        for paragraph in document.paragraphs
+        if paragraph.text == "Berkshire Hathaway Engagement"
+    )
+
+    assert subtitle.runs[0].italic is True
+    assert subtitle.runs[0].font.color.rgb != NAVY
+
+    company = next(
+        paragraph
+        for paragraph in document.paragraphs
+        if paragraph.text == "TEKsystems Global Services"
+    )
+
+    assert company.runs[0].font.color.rgb == NAVY
+
+
+def test_render_resume_section_heading_uses_left_accent(
+    tmp_path: Path,
+):
+    output = tmp_path / "resume.docx"
+
+    render_resume(make_resume(), output)
+
+    document = Document(output)
+
+    summary_heading = next(
+        paragraph
+        for paragraph in document.paragraphs
+        if paragraph.text == "SUMMARY"
+    )
+
+    assert 'w:left' in summary_heading._p.xml
+    assert 'w:bottom' not in summary_heading._p.xml
 
 
 def test_render_resume_has_page_break_before_experience(
