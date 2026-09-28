@@ -436,22 +436,22 @@ def parse_experience(lines: list[str]) -> list[Experience]:
         experiences: list[Experience] = []
 
         for role_index, role_position in enumerate(role_positions):
-            previous_nonempty = next(
-                (
-                    index
-                    for index in range(role_position - 1, -1, -1)
-                    if normalized[index]
-                ),
-                None,
-            )
+            # Use the blank-line boundary to locate the company/engagement
+            # block immediately above the role/date line. This prevents the
+            # final bullet from the previous job from being mistaken for the
+            # next employer when a resume is pasted without bullet markers.
+            header_start = role_position - 1
+            while header_start >= 0 and normalized[header_start]:
+                header_start -= 1
 
-            if previous_nonempty is None:
+            header_lines = [
+                normalized[index]
+                for index in range(header_start + 1, role_position + 1)
+                if normalized[index]
+            ]
+
+            if not header_lines:
                 header_lines = [normalized[role_position]]
-            else:
-                header_lines = [
-                    normalized[previous_nonempty],
-                    normalized[role_position],
-                ]
 
             experience = parse_experience_header_block(header_lines)
 
