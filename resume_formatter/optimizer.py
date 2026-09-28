@@ -38,13 +38,13 @@ NORMAL_PROFILE = LayoutProfile(
     name="normal",
     chars_per_line=105,
     lines_per_page=50,
-    body_font_pt=10.0,
+    body_font_pt=10.5,
     section_font_pt=11.0,
     body_spacing_after_pt=3,
-    section_spacing_before_pt=4,
+    section_spacing_before_pt=5,
     section_spacing_after_pt=4,
     bullet_spacing_after_pt=2,
-    entry_spacing_after_pt=5,
+    entry_spacing_after_pt=6,
 )
 
 
@@ -55,10 +55,10 @@ COMPACT_PROFILE = LayoutProfile(
     body_font_pt=10.0,
     section_font_pt=11.0,
     body_spacing_after_pt=2,
-    section_spacing_before_pt=2,
+    section_spacing_before_pt=3,
     section_spacing_after_pt=3,
     bullet_spacing_after_pt=1,
-    entry_spacing_after_pt=3,
+    entry_spacing_after_pt=4,
 )
 
 
@@ -69,7 +69,7 @@ MINIMUM_SAFE_PROFILE = LayoutProfile(
     body_font_pt=10.0,
     section_font_pt=11.0,
     body_spacing_after_pt=1,
-    section_spacing_before_pt=1,
+    section_spacing_before_pt=2,
     section_spacing_after_pt=2,
     bullet_spacing_after_pt=1,
     entry_spacing_after_pt=2,
