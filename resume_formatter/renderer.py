@@ -398,7 +398,7 @@ def add_experience(
 
     for experience_index, experience in enumerate(resume.experience):
         paragraph = document.add_paragraph()
-        paragraph.paragraph_format.space_after = Pt(2)
+        paragraph.paragraph_format.space_after = Pt(3)
         paragraph.paragraph_format.keep_with_next = True
         add_right_tab(paragraph)
 
@@ -434,7 +434,7 @@ def add_experience(
         paragraph = document.add_paragraph()
         # Give the role line enough separation to read as a distinct
         # hierarchy level instead of another line in the company block.
-        paragraph.paragraph_format.space_after = Pt(5)
+        paragraph.paragraph_format.space_after = Pt(6)
         paragraph.paragraph_format.keep_with_next = True
         add_right_tab(paragraph)
 
@@ -461,9 +461,9 @@ def add_experience(
             if is_last:
                 # Deliberately create visual separation between positions.
                 # This is the main page-balance adjustment.
-                spacing = max(profile.entry_spacing_after_pt + 3, 6)
+                spacing = max(profile.entry_spacing_after_pt + 4, 7)
                 if experience_index == len(resume.experience) - 1:
-                    spacing = max(profile.entry_spacing_after_pt + 5, 8)
+                    spacing = max(profile.entry_spacing_after_pt + 6, 9)
             else:
                 spacing = max(profile.bullet_spacing_after_pt, 2.5)
 
