@@ -217,6 +217,7 @@ def measure_experience(
     for experience in resume.experience:
         header_parts = [
             experience.company,
+            experience.subtitle,
             experience.location,
             experience.title,
             experience.dates,
