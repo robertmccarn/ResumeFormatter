@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from docx import Document
+from docx.shared import RGBColor
 
 from resume_formatter.models import (
     Bullet,
@@ -12,7 +13,7 @@ from resume_formatter.models import (
     SkillCategory,
 )
 from resume_formatter.optimizer import COMPACT_PROFILE, NORMAL_PROFILE
-from resume_formatter.renderer import render_resume
+from resume_formatter.renderer import BLUE, NAVY, render_resume
 
 
 def make_resume() -> Resume:
@@ -114,6 +115,26 @@ def test_render_resume_uses_bullet_markers_for_experience(
 
     assert "• Developed T-SQL stored procedures." in paragraphs
     assert "• Supported data modernization initiatives." in paragraphs
+
+
+def test_render_resume_uses_blue_visual_language(tmp_path: Path):
+    output = tmp_path / "resume.docx"
+
+    render_resume(make_resume(), output)
+
+    document = Document(output)
+
+    name_run = document.paragraphs[0].runs[0]
+    headline_run = document.paragraphs[2].runs[0]
+    summary_heading = next(
+        paragraph
+        for paragraph in document.paragraphs
+        if paragraph.text == "SUMMARY"
+    )
+
+    assert name_run.font.color.rgb == NAVY
+    assert headline_run.font.color.rgb == BLUE
+    assert summary_heading.runs[0].font.color.rgb == BLUE
 
 
 def test_render_resume_has_page_break_before_experience(
