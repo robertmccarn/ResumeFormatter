@@ -1,0 +1,35 @@
+Jordan Morgan
+jordan.morgan@example.com | 555-010-2040 | Houston, TX | linkedin.com/in/jordanmorgan
+Data Engineer
+Summary
+Data Engineer with 4+ years of experience building SQL Server data pipelines, supporting cloud-to-legacy modernization, and improving data reliability. Experienced with insurance data, T-SQL, Azure SQL, Azure Data Factory, Microsoft Fabric, and operational data workflows.
+Core Skills
+Databases: SQL Server, T-SQL, Stored Procedures, Query Optimization
+Cloud & Data: Azure SQL, Azure Data Factory, Synapse Analytics, ADLS Gen2, Microsoft Fabric, Snowflake
+Development: Python, Pandas, PowerShell, Git, Azure DevOps
+Data Practices: ETL/ELT, Data Modeling, Data Quality, Data Reliability, Agile/Scrum
+Education
+University of Houston | BBA, Management Information Systems | 2021
+Certifications
+Microsoft Fabric DP-700 | 2026
+AWS Certified AI Practitioner | 2025
+Azure Data Engineer Associate | 2024
+Power BI Data Analyst Associate | 2022
+Professional Experience
+Berkshire Hathaway Engagement | Data Engineer | 2022-Present | Houston, TX
+- Develop and maintain T-SQL stored procedures supporting nightly data processing and operational reporting.
+- Support Guidewire PolicyCenter and BillingCenter data workflows for insurance applications.
+- Participate in modernization work moving cloud-platform data into legacy reporting environments.
+- Investigate data-quality issues and trace discrepancies across source, transformation, and reporting layers.
+- Tune SQL queries and stored procedures to improve runtime performance for recurring workloads.
+- Collaborate with engineering and business teams in an Agile/Scrum environment to resolve data issues and deliver changes.
+Earlier Employer | Data Analyst | 2021-2022 | Houston, TX
+- Analyzed operational datasets using SQL to identify trends, exceptions, and data-quality issues.
+- Built repeatable queries and reporting datasets for business stakeholders.
+- Investigated discrepancies and documented findings for operational teams.
+- Supported recurring data validation and reconciliation activities.
+Retail Company | Operations Associate | 2016-2021 | Houston, TX
+- Supported daily store operations, inventory activities, customer service, and administrative processes.
+- Used operational reports and transaction data to identify exceptions and resolve issues.
+- Coordinated routine tasks across competing priorities in a fast-paced environment.
+- Maintained accurate records and followed established operating procedures.
