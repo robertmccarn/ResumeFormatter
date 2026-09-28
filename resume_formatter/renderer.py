@@ -2,7 +2,9 @@ from pathlib import Path
 
 from docx import Document
 from docx.enum.style import WD_STYLE_TYPE
-from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TAB_ALIGNMENT
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 from docx.shared import Inches, Pt
 
 from .models import Resume
@@ -11,11 +13,14 @@ from .optimizer import NORMAL_PROFILE, LayoutProfile
 
 FONT_NAME = "Arial"
 
-PAGE_MARGIN = Inches(0.6)
+PAGE_MARGIN = Inches(0.65)
 
-NAME_SIZE = Pt(18)
-HEADLINE_SIZE = Pt(11)
-CONTACT_SIZE = Pt(9)
+NAME_SIZE = Pt(21)
+HEADLINE_SIZE = Pt(11.5)
+CONTACT_SIZE = Pt(9.5)
+META_SIZE = Pt(9.5)
+
+TAB_POSITION = Inches(7.2)
 
 
 def configure_document(
@@ -50,8 +55,8 @@ def configure_document(
     bullet_style.base_style = normal
     bullet_style.font.name = FONT_NAME
     bullet_style.font.size = Pt(profile.body_font_pt)
-    bullet_style.paragraph_format.left_indent = Inches(0.18)
-    bullet_style.paragraph_format.first_line_indent = Inches(-0.12)
+    bullet_style.paragraph_format.left_indent = Inches(0.22)
+    bullet_style.paragraph_format.first_line_indent = Inches(-0.14)
     bullet_style.paragraph_format.space_after = Pt(
         profile.bullet_spacing_after_pt
     )
@@ -71,6 +76,30 @@ def add_run(
 
     if size is not None:
         run.font.size = size
+
+
+def add_right_tab(paragraph) -> None:
+    paragraph.paragraph_format.tab_stops.add_tab_stop(
+        TAB_POSITION,
+        WD_TAB_ALIGNMENT.RIGHT,
+    )
+
+
+def add_bottom_border(paragraph) -> None:
+    p = paragraph._p
+    p_pr = p.get_or_add_pPr()
+
+    p_bdr = p_pr.find(qn("w:pBdr"))
+    if p_bdr is None:
+        p_bdr = OxmlElement("w:pBdr")
+        p_pr.append(p_bdr)
+
+    bottom = OxmlElement("w:bottom")
+    bottom.set(qn("w:val"), "single")
+    bottom.set(qn("w:sz"), "6")
+    bottom.set(qn("w:space"), "3")
+    bottom.set(qn("w:color"), "808080")
+    p_bdr.append(bottom)
 
 
 def add_header(document: Document, resume: Resume) -> None:
@@ -101,7 +130,7 @@ def add_header(document: Document, resume: Resume) -> None:
     if contact_parts:
         paragraph = document.add_paragraph()
         paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        paragraph.paragraph_format.space_after = Pt(4)
+        paragraph.paragraph_format.space_after = Pt(3)
 
         add_run(
             paragraph,
@@ -116,14 +145,16 @@ def add_headline(document: Document, headline: str) -> None:
 
     paragraph = document.add_paragraph()
     paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    paragraph.paragraph_format.space_after = Pt(5)
+    paragraph.paragraph_format.space_after = Pt(7)
 
     add_run(
         paragraph,
-        headline,
+        headline.upper(),
         bold=True,
         size=HEADLINE_SIZE,
     )
+
+    add_bottom_border(paragraph)
 
 
 def add_section_heading(
@@ -138,6 +169,7 @@ def add_section_heading(
     paragraph.paragraph_format.space_after = Pt(
         profile.section_spacing_after_pt
     )
+    paragraph.paragraph_format.keep_with_next = True
 
     add_run(
         paragraph,
@@ -145,6 +177,8 @@ def add_section_heading(
         bold=True,
         size=Pt(profile.section_font_pt),
     )
+
+    add_bottom_border(paragraph)
 
 
 def add_summary(
@@ -212,28 +246,33 @@ def add_education(
 
     for education in resume.education:
         paragraph = document.add_paragraph()
-        paragraph.paragraph_format.space_after = Pt(
-            profile.body_spacing_after_pt
-        )
+        paragraph.paragraph_format.space_after = Pt(0)
+        paragraph.paragraph_format.keep_with_next = True
+        add_right_tab(paragraph)
 
         add_run(
             paragraph,
-            education.institution,
+            education.degree or education.institution,
             bold=True,
             size=Pt(profile.body_font_pt),
         )
 
-        if education.degree:
-            add_run(
-                paragraph,
-                f" | {education.degree}",
-                size=Pt(profile.body_font_pt),
-            )
-
         if education.dates:
             add_run(
                 paragraph,
-                f" | {education.dates}",
+                f"\t{education.dates}",
+                size=META_SIZE,
+            )
+
+        if education.degree:
+            paragraph = document.add_paragraph()
+            paragraph.paragraph_format.space_after = Pt(
+                profile.body_spacing_after_pt
+            )
+
+            add_run(
+                paragraph,
+                education.institution,
                 size=Pt(profile.body_font_pt),
             )
 
@@ -241,7 +280,7 @@ def add_education(
             bullet = document.add_paragraph(style="Resume Bullet")
             add_run(
                 bullet,
-                detail,
+                f"• {detail}",
                 size=Pt(profile.body_font_pt),
             )
 
@@ -261,6 +300,7 @@ def add_certifications(
         paragraph.paragraph_format.space_after = Pt(
             profile.body_spacing_after_pt
         )
+        add_right_tab(paragraph)
 
         add_run(
             paragraph,
@@ -278,8 +318,8 @@ def add_certifications(
         if certification.date:
             add_run(
                 paragraph,
-                f" | {certification.date}",
-                size=Pt(profile.body_font_pt),
+                f"\t{certification.date}",
+                size=META_SIZE,
             )
 
 
@@ -299,7 +339,9 @@ def add_experience(
 
     for experience in resume.experience:
         paragraph = document.add_paragraph()
-        paragraph.paragraph_format.space_after = Pt(1)
+        paragraph.paragraph_format.space_after = Pt(0)
+        paragraph.paragraph_format.keep_with_next = True
+        add_right_tab(paragraph)
 
         add_run(
             paragraph,
@@ -311,14 +353,14 @@ def add_experience(
         if experience.location:
             add_run(
                 paragraph,
-                f" | {experience.location}",
-                size=Pt(profile.body_font_pt),
+                f"\t{experience.location}",
+                size=META_SIZE,
             )
 
         paragraph = document.add_paragraph()
-        paragraph.paragraph_format.space_after = Pt(
-            profile.body_spacing_after_pt
-        )
+        paragraph.paragraph_format.space_after = Pt(2)
+        paragraph.paragraph_format.keep_with_next = True
+        add_right_tab(paragraph)
 
         add_run(
             paragraph,
@@ -330,27 +372,24 @@ def add_experience(
         if experience.dates:
             add_run(
                 paragraph,
-                f" | {experience.dates}",
-                size=Pt(profile.body_font_pt),
+                f"\t{experience.dates}",
+                size=META_SIZE,
             )
 
-        for bullet in experience.bullets:
-            paragraph = document.add_paragraph(
-                style="Resume Bullet"
+        for index, bullet in enumerate(experience.bullets):
+            paragraph = document.add_paragraph(style="Resume Bullet")
+            is_last = index == len(experience.bullets) - 1
+            paragraph.paragraph_format.space_after = Pt(
+                profile.entry_spacing_after_pt
+                if is_last
+                else profile.bullet_spacing_after_pt
             )
 
             add_run(
                 paragraph,
-                bullet.text,
+                f"• {bullet.text}",
                 size=Pt(profile.body_font_pt),
             )
-
-        if experience is not resume.experience[-1]:
-            spacer = document.add_paragraph()
-            spacer.paragraph_format.space_after = Pt(
-                profile.entry_spacing_after_pt
-            )
-            spacer.paragraph_format.space_before = Pt(0)
 
 
 def render_resume(
