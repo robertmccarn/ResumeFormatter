@@ -406,7 +406,7 @@ def add_experience(
             paragraph,
             experience.company,
             bold=True,
-            size=Pt(profile.body_font_pt + 0.5),
+            size=Pt(profile.experience_font_pt + 0.5),
             color=NAVY,
         )
 
@@ -434,7 +434,7 @@ def add_experience(
         paragraph = document.add_paragraph()
         # Give the role line enough separation to read as a distinct
         # hierarchy level instead of another line in the company block.
-        paragraph.paragraph_format.space_after = Pt(6)
+        paragraph.paragraph_format.space_after = Pt(7)
         paragraph.paragraph_format.keep_with_next = True
         add_right_tab(paragraph)
 
@@ -442,7 +442,7 @@ def add_experience(
             paragraph,
             experience.title,
             bold=True,
-            size=Pt(profile.body_font_pt),
+            size=Pt(profile.experience_font_pt),
             color=BLUE,
         )
 
@@ -468,6 +468,7 @@ def add_experience(
                 spacing = max(profile.bullet_spacing_after_pt, 2.5)
 
             paragraph.paragraph_format.space_after = Pt(spacing)
+            paragraph.paragraph_format.line_spacing = profile.experience_line_spacing
 
             add_run(
                 paragraph,
