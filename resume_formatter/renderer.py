@@ -19,6 +19,7 @@ NAME_SIZE = Pt(21)
 HEADLINE_SIZE = Pt(11.5)
 CONTACT_SIZE = Pt(9.5)
 META_SIZE = Pt(9.5)
+SUBTITLE_SIZE = Pt(10)
 
 TAB_POSITION = Inches(7.2)
 
@@ -76,12 +77,14 @@ def add_run(
     text: str,
     *,
     bold: bool = False,
+    italic: bool = False,
     size: Pt | None = None,
     color: RGBColor | None = None,
 ) -> None:
     run = paragraph.add_run(text)
     run.font.name = FONT_NAME
     run.bold = bold
+    run.italic = italic
     run.font.color.rgb = color or BLACK
 
     if size is not None:
@@ -99,7 +102,7 @@ def add_bottom_border(
     paragraph,
     *,
     color: str = "1F5E9C",
-    size: str = "8",
+    size: str = "6",
 ) -> None:
     p = paragraph._p
     p_pr = p.get_or_add_pPr()
@@ -109,12 +112,41 @@ def add_bottom_border(
         p_bdr = OxmlElement("w:pBdr")
         p_pr.append(p_bdr)
 
-    bottom = OxmlElement("w:bottom")
+    bottom = p_bdr.find(qn("w:bottom"))
+    if bottom is None:
+        bottom = OxmlElement("w:bottom")
+        p_bdr.append(bottom)
+
     bottom.set(qn("w:val"), "single")
     bottom.set(qn("w:sz"), size)
     bottom.set(qn("w:space"), "3")
     bottom.set(qn("w:color"), color)
-    p_bdr.append(bottom)
+
+
+def add_left_accent(
+    paragraph,
+    *,
+    color: str = "1F5E9C",
+    size: str = "14",
+) -> None:
+    """Add a subtle vertical accent without a full-width decorative rule."""
+    p = paragraph._p
+    p_pr = p.get_or_add_pPr()
+
+    p_bdr = p_pr.find(qn("w:pBdr"))
+    if p_bdr is None:
+        p_bdr = OxmlElement("w:pBdr")
+        p_pr.append(p_bdr)
+
+    left = p_bdr.find(qn("w:left"))
+    if left is None:
+        left = OxmlElement("w:left")
+        p_bdr.append(left)
+
+    left.set(qn("w:val"), "single")
+    left.set(qn("w:sz"), size)
+    left.set(qn("w:space"), "6")
+    left.set(qn("w:color"), color)
 
 
 def add_header(document: Document, resume: Resume) -> None:
@@ -162,7 +194,7 @@ def add_headline(document: Document, headline: str) -> None:
 
     paragraph = document.add_paragraph()
     paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    paragraph.paragraph_format.space_after = Pt(7)
+    paragraph.paragraph_format.space_after = Pt(6)
 
     add_run(
         paragraph,
@@ -172,11 +204,7 @@ def add_headline(document: Document, headline: str) -> None:
         color=BLUE,
     )
 
-    add_bottom_border(
-        paragraph,
-        color="1F5E9C",
-        size="12",
-    )
+    add_bottom_border(paragraph, color="1F5E9C", size="6")
 
 
 def add_section_heading(
@@ -201,7 +229,7 @@ def add_section_heading(
         color=BLUE,
     )
 
-    add_bottom_border(paragraph, color="1F5E9C", size="6")
+    add_left_accent(paragraph)
 
 
 def add_summary(
@@ -323,8 +351,10 @@ def add_certifications(
 
     for certification in resume.certifications:
         paragraph = document.add_paragraph()
+        # Certifications are intentionally tighter than general body copy:
+        # the section is metadata, not narrative content.
         paragraph.paragraph_format.space_after = Pt(
-            profile.body_spacing_after_pt
+            min(profile.body_spacing_after_pt, 1.5)
         )
         add_right_tab(paragraph)
 
@@ -366,7 +396,7 @@ def add_experience(
 
     for experience in resume.experience:
         paragraph = document.add_paragraph()
-        paragraph.paragraph_format.space_after = Pt(0)
+        paragraph.paragraph_format.space_after = Pt(1)
         paragraph.paragraph_format.keep_with_next = True
         add_right_tab(paragraph)
 
@@ -374,7 +404,7 @@ def add_experience(
             paragraph,
             experience.company,
             bold=True,
-            size=Pt(profile.body_font_pt),
+            size=Pt(profile.body_font_pt + 0.5),
             color=NAVY,
         )
 
@@ -386,8 +416,21 @@ def add_experience(
                 color=MUTED,
             )
 
+        if experience.subtitle:
+            paragraph = document.add_paragraph()
+            paragraph.paragraph_format.space_after = Pt(1)
+            paragraph.paragraph_format.keep_with_next = True
+
+            add_run(
+                paragraph,
+                experience.subtitle,
+                italic=True,
+                size=SUBTITLE_SIZE,
+                color=MUTED,
+            )
+
         paragraph = document.add_paragraph()
-        paragraph.paragraph_format.space_after = Pt(2)
+        paragraph.paragraph_format.space_after = Pt(3)
         paragraph.paragraph_format.keep_with_next = True
         add_right_tab(paragraph)
 
