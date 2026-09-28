@@ -9,7 +9,7 @@ from docx import Document
 
 try:
     import win32com.client
-except ImportError:  # pragma: no cover - exercised by environments without pywin32
+except ImportError:  # pragma: no cover - environments without pywin32
     win32com = None
 else:
     win32com = win32com.client
@@ -25,8 +25,22 @@ class ValidationResult:
     engine: str | None = None
 
 
+def _word_is_available() -> bool:
+    if win32com is None:
+        return False
+    try:
+        word = win32com.DispatchEx("Word.Application")
+        try:
+            word.Visible = False
+        finally:
+            word.Quit()
+        return True
+    except Exception:
+        return False
+
+
 def find_pagination_engine() -> str | None:
-    if win32com is not None and shutil.which("WINWORD.EXE"):
+    if _word_is_available():
         return "word"
     return shutil.which("soffice") or shutil.which("libreoffice")
 
@@ -78,7 +92,6 @@ def _word_page_count(docx_path: Path) -> int:
             AddToRecentFiles=False,
         )
         document.Repaginate()
-
         # wdStatisticPages = 2.
         return int(document.ComputeStatistics(2))
     except Exception as exc:
