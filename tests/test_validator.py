@@ -1,4 +1,5 @@
 from pathlib import Path
+from types import SimpleNamespace
 
 from resume_formatter.validator import ValidationResult, find_pagination_engine, validate_docx
 
@@ -46,58 +47,61 @@ def test_validate_without_engine_is_explicitly_unavailable(tmp_path: Path, monke
     assert "No supported pagination engine" in result.issues[0]
 
 
-def test_word_page_count_uses_word_com(monkeypatch, tmp_path: Path):
-    class FakeDocument:
-        def __init__(self):
-            self.closed = False
-            self.repaginate_called = False
-
-        def Repaginate(self):
-            self.repaginate_called = True
-
-        def ComputeStatistics(self, stat):
-            assert stat == 2
-            return 2
-
-        def Close(self, save_changes=False):
-            self.closed = True
-
-    class FakeDocuments:
-        def __init__(self, document):
-            self.document = document
-
-        def Open(self, *args, **kwargs):
-            return self.document
-
-    class FakeWord:
-        def __init__(self, document):
-            self.Documents = FakeDocuments(document)
-            self.Visible = None
-            self.DisplayAlerts = None
-            self.quit_called = False
-
-        def Quit(self):
-            self.quit_called = True
-
-    document = FakeDocument()
-    word = FakeWord(document)
-
-    class FakeClient:
-        def DispatchEx(self, name):
-            assert name == "Word.Application"
-            return word
-
-    monkeypatch.setattr("resume_formatter.validator.win32com", FakeClient())
-
+def test_word_page_count_uses_worker_process(monkeypatch, tmp_path: Path):
     from resume_formatter.validator import _word_page_count
 
     path = tmp_path / "resume.docx"
     path.write_bytes(b"placeholder")
 
+    completed = SimpleNamespace(
+        returncode=0,
+        stdout="2\n",
+        stderr="",
+    )
+
+    def fake_run(command, **kwargs):
+        assert command[0].endswith("python.exe")
+        assert command[1:3] == ["-m", "resume_formatter.word_pagination"]
+        assert command[3] == str(path)
+        assert kwargs["capture_output"] is True
+        assert kwargs["text"] is True
+        assert kwargs["check"] is False
+        return completed
+
+    monkeypatch.setattr("resume_formatter.validator.subprocess.run", fake_run)
+    monkeypatch.setattr(
+        "resume_formatter.validator.win32com",
+        object(),
+    )
+
     assert _word_page_count(path) == 2
-    assert document.repaginate_called is True
-    assert document.closed is True
-    assert word.quit_called is True
+
+
+def test_word_page_count_reports_worker_failure(monkeypatch, tmp_path: Path):
+    from resume_formatter.validator import _word_page_count
+
+    path = tmp_path / "resume.docx"
+    path.write_bytes(b"placeholder")
+
+    monkeypatch.setattr(
+        "resume_formatter.validator.subprocess.run",
+        lambda *args, **kwargs: SimpleNamespace(
+            returncode=1,
+            stdout="",
+            stderr="Microsoft Word pagination failed: RPC unavailable",
+        ),
+    )
+    monkeypatch.setattr(
+        "resume_formatter.validator.win32com",
+        object(),
+    )
+
+    try:
+        _word_page_count(path)
+    except RuntimeError as exc:
+        assert "RPC unavailable" in str(exc)
+    else:
+        raise AssertionError("Expected Word worker failure to raise RuntimeError.")
 
 
 def test_validation_result_is_immutable():
