@@ -95,7 +95,11 @@ def test_optimizer_can_select_compact_profile():
         optimizer.LAYOUT_PROFILES = original_profiles
 
 
-def test_optimizer_never_goes_below_minimum_body_font():
+def test_optimizer_uses_readable_baseline_and_font_floor():
+    assert NORMAL_PROFILE.body_font_pt == 11.0
+    assert COMPACT_PROFILE.body_font_pt == 10.5
+    assert MINIMUM_SAFE_PROFILE.body_font_pt == 10.0
+
     assert NORMAL_PROFILE.body_font_pt >= 10
     assert COMPACT_PROFILE.body_font_pt >= 10
     assert MINIMUM_SAFE_PROFILE.body_font_pt >= 10
