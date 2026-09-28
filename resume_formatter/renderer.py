@@ -5,7 +5,7 @@ from docx.enum.style import WD_STYLE_TYPE
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TAB_ALIGNMENT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
-from docx.shared import Inches, Pt
+from docx.shared import Inches, Pt, RGBColor
 
 from .models import Resume
 from .optimizer import NORMAL_PROFILE, LayoutProfile
@@ -21,6 +21,12 @@ CONTACT_SIZE = Pt(9.5)
 META_SIZE = Pt(9.5)
 
 TAB_POSITION = Inches(7.2)
+
+# Resume visual language: restrained corporate blue with neutral body text.
+NAVY = RGBColor(0x17, 0x36, 0x5D)
+BLUE = RGBColor(0x1F, 0x5E, 0x9C)
+MUTED = RGBColor(0x66, 0x70, 0x85)
+BLACK = RGBColor(0x20, 0x20, 0x20)
 
 
 def configure_document(
@@ -39,6 +45,7 @@ def configure_document(
     normal = styles["Normal"]
     normal.font.name = FONT_NAME
     normal.font.size = Pt(profile.body_font_pt)
+    normal.font.color.rgb = BLACK
     normal.paragraph_format.space_after = Pt(
         profile.body_spacing_after_pt
     )
@@ -55,6 +62,7 @@ def configure_document(
     bullet_style.base_style = normal
     bullet_style.font.name = FONT_NAME
     bullet_style.font.size = Pt(profile.body_font_pt)
+    bullet_style.font.color.rgb = BLACK
     bullet_style.paragraph_format.left_indent = Inches(0.22)
     bullet_style.paragraph_format.first_line_indent = Inches(-0.14)
     bullet_style.paragraph_format.space_after = Pt(
@@ -69,10 +77,12 @@ def add_run(
     *,
     bold: bool = False,
     size: Pt | None = None,
+    color: RGBColor | None = None,
 ) -> None:
     run = paragraph.add_run(text)
     run.font.name = FONT_NAME
     run.bold = bold
+    run.font.color.rgb = color or BLACK
 
     if size is not None:
         run.font.size = size
@@ -85,7 +95,12 @@ def add_right_tab(paragraph) -> None:
     )
 
 
-def add_bottom_border(paragraph) -> None:
+def add_bottom_border(
+    paragraph,
+    *,
+    color: str = "1F5E9C",
+    size: str = "8",
+) -> None:
     p = paragraph._p
     p_pr = p.get_or_add_pPr()
 
@@ -96,9 +111,9 @@ def add_bottom_border(paragraph) -> None:
 
     bottom = OxmlElement("w:bottom")
     bottom.set(qn("w:val"), "single")
-    bottom.set(qn("w:sz"), "6")
+    bottom.set(qn("w:sz"), size)
     bottom.set(qn("w:space"), "3")
-    bottom.set(qn("w:color"), "808080")
+    bottom.set(qn("w:color"), color)
     p_bdr.append(bottom)
 
 
@@ -112,6 +127,7 @@ def add_header(document: Document, resume: Resume) -> None:
         resume.contact.name,
         bold=True,
         size=NAME_SIZE,
+        color=NAVY,
     )
 
     contact_parts = []
@@ -136,6 +152,7 @@ def add_header(document: Document, resume: Resume) -> None:
             paragraph,
             " | ".join(contact_parts),
             size=CONTACT_SIZE,
+            color=MUTED,
         )
 
 
@@ -152,9 +169,14 @@ def add_headline(document: Document, headline: str) -> None:
         headline.upper(),
         bold=True,
         size=HEADLINE_SIZE,
+        color=BLUE,
     )
 
-    add_bottom_border(paragraph)
+    add_bottom_border(
+        paragraph,
+        color="1F5E9C",
+        size="12",
+    )
 
 
 def add_section_heading(
@@ -176,9 +198,10 @@ def add_section_heading(
         title.upper(),
         bold=True,
         size=Pt(profile.section_font_pt),
+        color=BLUE,
     )
 
-    add_bottom_border(paragraph)
+    add_bottom_border(paragraph, color="1F5E9C", size="6")
 
 
 def add_summary(
@@ -225,6 +248,7 @@ def add_skills(
                 f"{category.name}: ",
                 bold=True,
                 size=Pt(profile.body_font_pt),
+                color=NAVY,
             )
 
         add_run(
@@ -255,6 +279,7 @@ def add_education(
             education.degree or education.institution,
             bold=True,
             size=Pt(profile.body_font_pt),
+            color=NAVY,
         )
 
         if education.dates:
@@ -262,6 +287,7 @@ def add_education(
                 paragraph,
                 f"\t{education.dates}",
                 size=META_SIZE,
+                color=MUTED,
             )
 
         if education.degree:
@@ -320,6 +346,7 @@ def add_certifications(
                 paragraph,
                 f"\t{certification.date}",
                 size=META_SIZE,
+                color=MUTED,
             )
 
 
@@ -348,6 +375,7 @@ def add_experience(
             experience.company,
             bold=True,
             size=Pt(profile.body_font_pt),
+            color=NAVY,
         )
 
         if experience.location:
@@ -355,6 +383,7 @@ def add_experience(
                 paragraph,
                 f"\t{experience.location}",
                 size=META_SIZE,
+                color=MUTED,
             )
 
         paragraph = document.add_paragraph()
@@ -367,6 +396,7 @@ def add_experience(
             experience.title,
             bold=True,
             size=Pt(profile.body_font_pt),
+            color=BLUE,
         )
 
         if experience.dates:
@@ -374,6 +404,7 @@ def add_experience(
                 paragraph,
                 f"\t{experience.dates}",
                 size=META_SIZE,
+                color=MUTED,
             )
 
         for index, bullet in enumerate(experience.bullets):
@@ -387,7 +418,14 @@ def add_experience(
 
             add_run(
                 paragraph,
-                f"• {bullet.text}",
+                "• ",
+                bold=True,
+                size=Pt(profile.body_font_pt),
+                color=BLUE,
+            )
+            add_run(
+                paragraph,
+                bullet.text,
                 size=Pt(profile.body_font_pt),
             )
 
