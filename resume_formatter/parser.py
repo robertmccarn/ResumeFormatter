@@ -435,7 +435,7 @@ def parse_resume(text: str) -> Resume:
     first_section_index = next(
         (
             index
-            for index, line in enumerate(nonempty_lines[1:], start=1)
+            for index, line in enumerate(raw_lines)
             if is_section_heading(line)
         ),
         None,
@@ -446,7 +446,7 @@ def parse_resume(text: str) -> Resume:
             "Resume requires at least one recognized section."
         )
 
-    header_lines = nonempty_lines[:first_section_index]
+    header_lines = raw_lines[:first_section_index]
     contact = parse_contact(header_lines)
 
     contact_values = {
@@ -471,7 +471,7 @@ def parse_resume(text: str) -> Resume:
 
     headline = " | ".join(headline_candidates)
 
-    remaining = nonempty_lines[first_section_index:]
+    remaining = raw_lines[first_section_index:]
     sections = split_sections(remaining)
 
     return Resume(
