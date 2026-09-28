@@ -62,7 +62,7 @@ def configure_document(
 
     bullet_style.base_style = normal
     bullet_style.font.name = FONT_NAME
-    bullet_style.font.size = Pt(profile.body_font_pt)
+    bullet_style.font.size = Pt(profile.experience_font_pt)
     bullet_style.font.color.rgb = BLACK
     bullet_style.paragraph_format.left_indent = Inches(0.22)
     bullet_style.paragraph_format.first_line_indent = Inches(-0.14)
