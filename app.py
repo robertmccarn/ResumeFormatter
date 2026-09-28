@@ -26,7 +26,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: list[str] | None = None) -> int:
+def run_cli(argv: list[str]) -> int:
     args = build_parser().parse_args(argv)
 
     if not args.input.exists():
@@ -80,6 +80,18 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Reason:      {issue}")
 
     return 1
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = list(sys.argv[1:] if argv is None else argv)
+
+    if not args or args == ["--gui"]:
+        from resume_formatter.gui import run_gui
+
+        run_gui()
+        return 0
+
+    return run_cli(args)
 
 
 if __name__ == "__main__":
