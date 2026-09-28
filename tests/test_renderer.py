@@ -102,6 +102,20 @@ def test_render_resume_contains_expected_content(tmp_path: Path):
     assert "TEKsystems Global Services" in text
 
 
+def test_render_resume_uses_bullet_markers_for_experience(
+    tmp_path: Path,
+):
+    output = tmp_path / "resume.docx"
+
+    render_resume(make_resume(), output)
+
+    document = Document(output)
+    paragraphs = [paragraph.text for paragraph in document.paragraphs]
+
+    assert "• Developed T-SQL stored procedures." in paragraphs
+    assert "• Supported data modernization initiatives." in paragraphs
+
+
 def test_render_resume_has_page_break_before_experience(
     tmp_path: Path,
 ):
@@ -123,8 +137,8 @@ def test_render_resume_has_page_break_before_experience(
 
     assert page_break_position != -1
     assert experience_position != -1
-    assert page_break_position < experience_position
 
+    assert page_break_position < experience_position
 
 
 def test_render_resume_uses_selected_profile(tmp_path: Path):
