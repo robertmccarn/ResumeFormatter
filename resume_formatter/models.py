@@ -42,6 +42,7 @@ class Experience:
     title: str
     dates: str = ""
     location: str = ""
+    subtitle: str = ""
     bullets: list[Bullet] = field(default_factory=list)
 
 
