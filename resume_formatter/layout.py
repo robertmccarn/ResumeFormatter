@@ -15,6 +15,7 @@ DEFAULT_LINES_PER_PAGE = 50
 @dataclass(frozen=True)
 class LayoutSettings:
     chars_per_line: int = DEFAULT_CHARS_PER_LINE
+    experience_chars_per_line: int = 95
     lines_per_page: int = DEFAULT_LINES_PER_PAGE
 
 
