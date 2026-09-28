@@ -229,30 +229,6 @@ def parse_certifications(lines: list[str]) -> list[Certification]:
     return certifications
 
 
-def parse_experience(lines: list[str]) -> list[Experience]:
-    experiences: list[Experience] = []
-
-    current: Experience | None = None
-
-    for line in lines:
-        if is_bullet(line):
-            if current is not None:
-                current.bullets.append(
-                    Bullet(text=clean_bullet(line))
-                )
-            continue
-
-        if current is not None:
-            experiences.append(current)
-
-        current = parse_experience_header(line)
-
-    if current is not None:
-        experiences.append(current)
-
-    return experiences
-
-
 def parse_experience_header(line: str) -> Experience:
     parts = [
         part.strip()
@@ -261,14 +237,10 @@ def parse_experience_header(line: str) -> Experience:
     ]
 
     if len(parts) >= 2:
-        company = parts[0]
-        title = parts[1]
-        dates = parts[2] if len(parts) >= 3 else ""
-
         return Experience(
-            company=company,
-            title=title,
-            dates=dates,
+            company=parts[0],
+            title=parts[1],
+            dates=parts[2] if len(parts) >= 3 else "",
         )
 
     # Fallback for "Company — Title — Dates"
@@ -289,6 +261,87 @@ def parse_experience_header(line: str) -> Experience:
         company=line,
         title="",
     )
+
+
+def parse_experience_header_block(lines: list[str]) -> Experience:
+    """Parse both compact and multiline experience headers.
+
+    Supported multiline form:
+        Company
+        Client / Engagement
+        Title
+        Dates
+    """
+    cleaned = [normalize_line(line) for line in lines if normalize_line(line)]
+
+    if not cleaned:
+        raise ValueError("Experience header cannot be empty.")
+
+    if len(cleaned) == 1:
+        return parse_experience_header(cleaned[0])
+
+    if len(cleaned) == 2:
+        return Experience(
+            company=cleaned[0],
+            title=cleaned[1],
+        )
+
+    if len(cleaned) == 3:
+        return Experience(
+            company=cleaned[0],
+            title=cleaned[1],
+            dates=cleaned[2],
+        )
+
+    return Experience(
+        company=cleaned[0],
+        subtitle=" | ".join(cleaned[1:-2]) if len(cleaned) > 4 else cleaned[1],
+        title=cleaned[-2],
+        dates=cleaned[-1],
+    )
+
+
+def parse_experience(lines: list[str]) -> list[Experience]:
+    experiences: list[Experience] = []
+
+    current: Experience | None = None
+    pending_header: list[str] = []
+
+    for line in lines:
+        line = normalize_line(line)
+
+        if not line:
+            continue
+
+        if is_bullet(line):
+            if current is None:
+                if pending_header:
+                    current = parse_experience_header_block(
+                        pending_header
+                    )
+                    pending_header = []
+                else:
+                    continue
+
+            current.bullets.append(
+                Bullet(text=clean_bullet(line))
+            )
+            continue
+
+        if current is not None:
+            experiences.append(current)
+            current = None
+
+        pending_header.append(line)
+
+    if current is not None:
+        experiences.append(current)
+    elif pending_header:
+        experiences.append(
+            parse_experience_header_block(pending_header)
+        )
+
+    return experiences
 
 
 def parse_resume(text: str) -> Resume:
