@@ -9,6 +9,7 @@ The compiler preserves user-supplied resume content as the primary invariant. It
 - Python 3.11+
 - Microsoft Word on Windows for actual Word pagination validation
 - pywin32
+- Tkinter (normally included with the standard Windows Python distribution)
 
 LibreOffice can be used as a fallback pagination engine on systems where Microsoft Word is unavailable.
 
@@ -17,6 +18,32 @@ LibreOffice can be used as a fallback pagination engine on systems where Microso
     python -m venv .venv
     .venv\Scripts\Activate.ps1
     pip install -r requirements.txt
+
+## Desktop application
+
+Launch the GUI with:
+
+    python app.py
+
+Or explicitly:
+
+    python app.py --gui
+
+The desktop app provides a plain-text resume editor, TXT open/save, DOCX output selection, background compilation, and an audit panel showing pagination and trimming results.
+
+## Visual language
+
+The renderer uses a restrained, single-column professional design:
+
+- Arial typography with conventional 10–12 pt body sizing
+- Deep navy for the candidate name and primary identity
+- One medium-blue accent for section headings, role titles, bullets, and divider rules
+- Muted gray for contact information, locations, and dates
+- Black body text for maximum readability
+- Consistent spacing and hierarchy across every section
+- No tables, columns, graphics, photos, text boxes, icons, or decorative elements that could interfere with ATS parsing
+
+The visual system is intentionally conservative: color is used to direct attention rather than decorate the page. This follows current ATS-oriented guidance emphasizing standard headings, readable fonts, simple single-column structure, and consistent formatting.
 
 ## CLI
 
