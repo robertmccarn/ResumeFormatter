@@ -66,8 +66,10 @@ def configure_document(
     bullet_style.font.color.rgb = BLACK
     bullet_style.paragraph_format.left_indent = Inches(0.22)
     bullet_style.paragraph_format.first_line_indent = Inches(-0.14)
+    # Slightly more breathing room than the global body rhythm, while
+    # remaining conservative enough for the compact profiles.
     bullet_style.paragraph_format.space_after = Pt(
-        profile.bullet_spacing_after_pt
+        max(profile.bullet_spacing_after_pt, 2.5)
     )
     bullet_style.paragraph_format.line_spacing = 1.0
 
@@ -152,7 +154,7 @@ def add_left_accent(
 def add_header(document: Document, resume: Resume) -> None:
     paragraph = document.add_paragraph()
     paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    paragraph.paragraph_format.space_after = Pt(1)
+    paragraph.paragraph_format.space_after = Pt(2)
 
     add_run(
         paragraph,
@@ -178,7 +180,7 @@ def add_header(document: Document, resume: Resume) -> None:
     if contact_parts:
         paragraph = document.add_paragraph()
         paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        paragraph.paragraph_format.space_after = Pt(3)
+        paragraph.paragraph_format.space_after = Pt(4)
 
         add_run(
             paragraph,
@@ -194,7 +196,7 @@ def add_headline(document: Document, headline: str) -> None:
 
     paragraph = document.add_paragraph()
     paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    paragraph.paragraph_format.space_after = Pt(6)
+    paragraph.paragraph_format.space_after = Pt(7)
 
     add_run(
         paragraph,
@@ -214,10 +216,10 @@ def add_section_heading(
 ) -> None:
     paragraph = document.add_paragraph()
     paragraph.paragraph_format.space_before = Pt(
-        profile.section_spacing_before_pt
+        profile.section_spacing_before_pt + 1
     )
     paragraph.paragraph_format.space_after = Pt(
-        profile.section_spacing_after_pt
+        profile.section_spacing_after_pt + 1
     )
     paragraph.paragraph_format.keep_with_next = True
 
@@ -244,7 +246,7 @@ def add_summary(
 
     paragraph = document.add_paragraph()
     paragraph.paragraph_format.space_after = Pt(
-        profile.body_spacing_after_pt
+        max(profile.body_spacing_after_pt, 3.5)
     )
 
     add_run(
@@ -267,7 +269,7 @@ def add_skills(
     for category in resume.skills:
         paragraph = document.add_paragraph()
         paragraph.paragraph_format.space_after = Pt(
-            profile.body_spacing_after_pt
+            max(profile.body_spacing_after_pt, 2.5)
         )
 
         if category.name:
@@ -298,7 +300,7 @@ def add_education(
 
     for education in resume.education:
         paragraph = document.add_paragraph()
-        paragraph.paragraph_format.space_after = Pt(0)
+        paragraph.paragraph_format.space_after = Pt(1)
         paragraph.paragraph_format.keep_with_next = True
         add_right_tab(paragraph)
 
@@ -321,7 +323,7 @@ def add_education(
         if education.degree:
             paragraph = document.add_paragraph()
             paragraph.paragraph_format.space_after = Pt(
-                profile.body_spacing_after_pt
+                max(profile.body_spacing_after_pt, 2.5)
             )
 
             add_run(
@@ -351,10 +353,10 @@ def add_certifications(
 
     for certification in resume.certifications:
         paragraph = document.add_paragraph()
-        # Certifications are intentionally tighter than general body copy:
-        # the section is metadata, not narrative content.
+        # Certifications remain intentionally tighter than narrative
+        # sections so Page 1 gains breathing room without losing content.
         paragraph.paragraph_format.space_after = Pt(
-            min(profile.body_spacing_after_pt, 1.5)
+            min(profile.body_spacing_after_pt, 1.0)
         )
         add_right_tab(paragraph)
 
@@ -394,9 +396,9 @@ def add_experience(
         profile,
     )
 
-    for experience in resume.experience:
+    for experience_index, experience in enumerate(resume.experience):
         paragraph = document.add_paragraph()
-        paragraph.paragraph_format.space_after = Pt(1)
+        paragraph.paragraph_format.space_after = Pt(2)
         paragraph.paragraph_format.keep_with_next = True
         add_right_tab(paragraph)
 
@@ -418,7 +420,7 @@ def add_experience(
 
         if experience.subtitle:
             paragraph = document.add_paragraph()
-            paragraph.paragraph_format.space_after = Pt(1)
+            paragraph.paragraph_format.space_after = Pt(2)
             paragraph.paragraph_format.keep_with_next = True
 
             add_run(
@@ -430,7 +432,9 @@ def add_experience(
             )
 
         paragraph = document.add_paragraph()
-        paragraph.paragraph_format.space_after = Pt(3)
+        # Give the role line enough separation to read as a distinct
+        # hierarchy level instead of another line in the company block.
+        paragraph.paragraph_format.space_after = Pt(5)
         paragraph.paragraph_format.keep_with_next = True
         add_right_tab(paragraph)
 
@@ -453,11 +457,17 @@ def add_experience(
         for index, bullet in enumerate(experience.bullets):
             paragraph = document.add_paragraph(style="Resume Bullet")
             is_last = index == len(experience.bullets) - 1
-            paragraph.paragraph_format.space_after = Pt(
-                profile.entry_spacing_after_pt
-                if is_last
-                else profile.bullet_spacing_after_pt
-            )
+
+            if is_last:
+                # Deliberately create visual separation between positions.
+                # This is the main page-balance adjustment.
+                spacing = max(profile.entry_spacing_after_pt + 3, 6)
+                if experience_index == len(resume.experience) - 1:
+                    spacing = max(profile.entry_spacing_after_pt + 5, 8)
+            else:
+                spacing = max(profile.bullet_spacing_after_pt, 2.5)
+
+            paragraph.paragraph_format.space_after = Pt(spacing)
 
             add_run(
                 paragraph,
