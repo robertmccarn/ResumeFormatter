@@ -240,7 +240,7 @@ def measure_experience(
     return measure_text(
         "Professional Experience",
         "\n".join(lines),
-        chars_per_line=settings.chars_per_line,
+        chars_per_line=settings.experience_chars_per_line,
         fixed=False,
     )
 
