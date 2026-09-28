@@ -35,13 +35,15 @@ The desktop app provides a plain-text resume editor, TXT open/save, DOCX output 
 
 The renderer uses a restrained, single-column professional design:
 
-- Arial typography with conventional 10–12 pt body sizing
+- Arial typography with an 11 pt baseline body size, 10.5 pt compact profile, and 10 pt hard floor
 - Deep navy for the candidate name and primary identity
 - One medium-blue accent for section headings, role titles, bullets, and subtle section accents
 - Muted gray for contact information, locations, dates, and engagement subtitles
 - Black body text for maximum readability
 - Strong company → engagement → role → dates hierarchy for experience entries
 - Compact metadata spacing for certifications
+- Page 1 profile hierarchy: Summary → Core Skills → Certifications → Education
+- Professional Experience begins on page 2 with real, individually spaced bullet paragraphs
 - No tables, columns, graphics, photos, text boxes, icons, or decorative elements that could interfere with ATS parsing
 
 The visual system is intentionally conservative: color is used to direct attention rather than decorate the page. This follows current ATS-oriented guidance emphasizing standard headings, readable fonts, simple single-column structure, and consistent formatting.
@@ -75,3 +77,10 @@ The Microsoft Word acceptance test is opt-in because it requires a locally insta
     pytest -v tests/test_acceptance.py
 
 The acceptance test uses the representative fixture in tests/fixtures/representative_resume.txt and verifies that the compiled DOCX is two pages with Professional Experience beginning on page 2.
+
+
+## Input normalization
+
+The parser accepts clean plain text as well as common pasted-resume variants. It normalizes lightweight Markdown headings and mailto links, collects contact information spread across multiple lines, and recognizes experience blocks even when the pasted experience statements do not contain explicit bullet characters. The renderer—not the source text—owns the visual bullet formatting.
+
+The compiler's visual system is intentionally content-preserving: it may trim eligible older-experience bullets only when the two-page constraint cannot otherwise be satisfied, but formatting and layout decisions do not rewrite resume content.
