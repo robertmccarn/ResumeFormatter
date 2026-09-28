@@ -50,6 +50,24 @@ class LayoutReport:
     def fits_two_pages(self) -> bool:
         return self.page_count_estimate <= 2 and self.total_overflow == 0
 
+    @property
+    def page_one_utilization(self) -> float:
+        if self.page_one_capacity <= 0:
+            return 0.0
+        return self.page_one_lines / self.page_one_capacity
+
+    @property
+    def page_two_utilization(self) -> float:
+        if self.page_two_capacity <= 0:
+            return 0.0
+        return self.page_two_lines / self.page_two_capacity
+
+    @property
+    def utilization_balance(self) -> float:
+        return abs(
+            self.page_one_utilization - self.page_two_utilization
+        )
+
 
 def estimate_wrapped_lines(
     text: str,
