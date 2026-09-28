@@ -305,3 +305,12 @@ def test_render_profiles_keep_experience_on_page_two(
     assert page_break_position != -1
     assert experience_position != -1
     assert page_break_position < experience_position
+
+
+def test_render_resume_uses_dedicated_experience_typography(tmp_path: Path):
+    output = tmp_path / "experience-typography.docx"
+    render_resume(make_resume(), output, profile=NORMAL_PROFILE)
+    document = Document(output)
+    bullet = next(paragraph for paragraph in document.paragraphs if paragraph.text.startswith("• Developed T-SQL"))
+    assert bullet.runs[0].font.size.pt == NORMAL_PROFILE.experience_font_pt
+    assert bullet.paragraph_format.line_spacing == NORMAL_PROFILE.experience_line_spacing
