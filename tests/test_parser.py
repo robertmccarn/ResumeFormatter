@@ -1,7 +1,4 @@
-from resume_formatter.models import (
-    Contact,
-    SkillCategory,
-)
+from resume_formatter.models import Contact, Experience, SkillCategory
 from resume_formatter.parser import parse_resume
 
 
@@ -36,6 +33,34 @@ TEKsystems Global Services | Data Engineer | 2022–Present
 Retail Company | Store Manager | 2015–2018
 - Managed daily store operations.
 - Trained and supported employees.
+"""
+
+
+MULTILINE_EXPERIENCE_RESUME = """
+Robert McCarn
+robert@example.com | 555-555-5555 | Spring, TX
+
+Data Engineer
+
+SUMMARY
+Data Engineer with enterprise experience.
+
+PROFESSIONAL EXPERIENCE
+TEKsystems Global Services
+Berkshire Hathaway Engagement
+Data Engineer
+2022 – Present
+- Build and support production data pipelines.
+- Develop SQL data solutions.
+- Troubleshoot production data issues.
+
+University of Houston
+C.T. Bauer College of Business
+Project Analyst, Office of Digital Learning / Academic Support Assistant
+2018 – 2020
+- Managed operational data.
+- Automated recurring reporting.
+- Delivered analytical reports.
 """
 
 
@@ -103,6 +128,28 @@ def test_parse_experience():
 
     assert len(first.bullets) == 3
     assert "T-SQL stored procedures" in first.bullets[0].text
+
+
+def test_parse_multiline_experience_headers():
+    resume = parse_resume(MULTILINE_EXPERIENCE_RESUME)
+
+    assert len(resume.experience) == 2
+
+    first = resume.experience[0]
+    assert first.company == "TEKsystems Global Services"
+    assert first.subtitle == "Berkshire Hathaway Engagement"
+    assert first.title == "Data Engineer"
+    assert first.dates == "2022 – Present"
+    assert len(first.bullets) == 3
+
+    second = resume.experience[1]
+    assert second.company == "University of Houston"
+    assert second.subtitle == "C.T. Bauer College of Business"
+    assert second.title == (
+        "Project Analyst, Office of Digital Learning / "
+        "Academic Support Assistant"
+    )
+    assert second.dates == "2018 – 2020"
 
 
 def test_parse_empty_resume():
