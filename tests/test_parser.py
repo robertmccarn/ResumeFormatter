@@ -158,3 +158,76 @@ def test_parse_empty_resume():
         assert False, "Expected ValueError"
     except ValueError:
         pass
+
+
+
+BULLETLESS_PASTED_RESUME = """
+Robert McCarn
+Spring, TX
+(713) 517-8743
+[robertmccarn@gmail.com](mailto:robertmccarn@gmail.com)
+linkedin.com/in/robertmccarn
+
+DATA ENGINEER | ANALYTICS ENGINEER
+SQL | Power BI | Azure | Data Warehousing | Microsoft Fabric
+
+PROFESSIONAL SUMMARY
+Data Engineer with 4+ years of experience developing enterprise data solutions.
+
+CORE SKILLS
+SQL & Data Engineering: Advanced T-SQL, SQL Server, Stored Procedures
+ETL & Cloud Data: Azure Data Factory, Azure Synapse Analytics, Microsoft Fabric
+
+CERTIFICATIONS
+Microsoft Certified: Fabric Data Engineer Associate (DP-700) — 2026
+
+PROFESSIONAL EXPERIENCE
+TEKsystems Global Services — Berkshire Hathaway Engagement
+Data Engineer | 2022 – Present
+
+Develop and optimize SQL Server data solutions supporting enterprise data warehouse modernization.
+
+Design complex T-SQL queries, stored procedures, and transformation logic.
+
+Build and maintain ETL/ELT pipelines using Azure Data Factory and SQL Server.
+
+University of Houston — C.T. Bauer College of Business
+Project Analyst, Office of Digital Learning / Academic Support Assistant | 2018 – 2020
+
+Managed and analyzed data for 2,200+ students.
+
+Automated recurring data extraction and reporting workflows.
+"""
+
+
+def test_parse_bulletless_pasted_resume():
+    resume = parse_resume(BULLETLESS_PASTED_RESUME)
+
+    assert resume.contact.name == "Robert McCarn"
+    assert resume.contact.location == "Spring, TX"
+    assert resume.contact.phone == "(713) 517-8743"
+    assert resume.contact.email == "robertmccarn@gmail.com"
+    assert "linkedin.com/in/robertmccarn" in resume.contact.links
+
+    assert resume.headline == (
+        "DATA ENGINEER | ANALYTICS ENGINEER | "
+        "SQL | Power BI | Azure | Data Warehousing | Microsoft Fabric"
+    )
+
+    assert len(resume.experience) == 2
+
+    first = resume.experience[0]
+    assert first.company == "TEKsystems Global Services — Berkshire Hathaway Engagement"
+    assert first.title == "Data Engineer"
+    assert first.dates == "2022 – Present"
+    assert len(first.bullets) == 3
+    assert "SQL Server data solutions" in first.bullets[0].text
+
+    second = resume.experience[1]
+    assert second.company == "University of Houston — C.T. Bauer College of Business"
+    assert second.title == (
+        "Project Analyst, Office of Digital Learning / "
+        "Academic Support Assistant"
+    )
+    assert second.dates == "2018 – 2020"
+    assert len(second.bullets) == 2
