@@ -87,3 +87,31 @@ def test_main_reports_incomplete_compilation(
     assert output_path.exists()
     assert "Status:      INCOMPLETE" in captured.out
     assert "pagination unavailable" in captured.out
+
+
+def test_main_without_args_launches_gui(monkeypatch):
+    called = {"value": False}
+
+    def fake_run_gui() -> None:
+        called["value"] = True
+
+    import resume_formatter.gui
+
+    monkeypatch.setattr(resume_formatter.gui, "run_gui", fake_run_gui)
+
+    assert main([]) == 0
+    assert called["value"] is True
+
+
+def test_main_gui_flag_launches_gui(monkeypatch):
+    called = {"value": False}
+
+    def fake_run_gui() -> None:
+        called["value"] = True
+
+    import resume_formatter.gui
+
+    monkeypatch.setattr(resume_formatter.gui, "run_gui", fake_run_gui)
+
+    assert main(["--gui"]) == 0
+    assert called["value"] is True
