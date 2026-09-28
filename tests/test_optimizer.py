@@ -124,3 +124,20 @@ def test_optimizer_result_contains_layout():
 
     assert result.layout is not None
     assert result.layout.page_count_estimate >= 1
+
+
+def test_layout_exposes_page_utilization_balance():
+    resume = make_resume()
+    result = optimize_layout(resume)
+
+    assert 0.0 <= result.layout.page_one_utilization <= 1.0
+    assert 0.0 <= result.layout.page_two_utilization <= 1.0
+    assert result.layout.utilization_balance >= 0.0
+
+
+def test_optimizer_prefers_readability_when_pages_are_reasonably_filled():
+    resume = make_resume()
+    result = optimize_layout(resume)
+
+    assert result.layout.fits_two_pages
+    assert result.profile == NORMAL_PROFILE
