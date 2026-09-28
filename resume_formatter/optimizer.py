@@ -17,6 +17,11 @@ class LayoutProfile:
     body_font_pt: float
     section_font_pt: float
 
+    # Page 2 has its own visual rhythm. Experience should be larger and
+    # more breathable than the compact profile material on page 1.
+    experience_font_pt: float
+    experience_line_spacing: float
+
     body_spacing_after_pt: float
     section_spacing_before_pt: float
     section_spacing_after_pt: float
@@ -40,6 +45,8 @@ NORMAL_PROFILE = LayoutProfile(
     lines_per_page=50,
     body_font_pt=11.0,
     section_font_pt=11.5,
+    experience_font_pt=11.5,
+    experience_line_spacing=1.05,
     body_spacing_after_pt=3.5,
     section_spacing_before_pt=6,
     section_spacing_after_pt=4,
@@ -54,6 +61,8 @@ COMPACT_PROFILE = LayoutProfile(
     lines_per_page=52,
     body_font_pt=10.5,
     section_font_pt=11.5,
+    experience_font_pt=11.0,
+    experience_line_spacing=1.04,
     body_spacing_after_pt=2,
     section_spacing_before_pt=4,
     section_spacing_after_pt=3,
@@ -68,6 +77,8 @@ MINIMUM_SAFE_PROFILE = LayoutProfile(
     lines_per_page=54,
     body_font_pt=10.0,
     section_font_pt=11.5,
+    experience_font_pt=10.5,
+    experience_line_spacing=1.02,
     body_spacing_after_pt=1,
     section_spacing_before_pt=2,
     section_spacing_after_pt=2,
