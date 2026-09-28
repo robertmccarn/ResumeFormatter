@@ -37,10 +37,11 @@ The renderer uses a restrained, single-column professional design:
 
 - Arial typography with conventional 10–12 pt body sizing
 - Deep navy for the candidate name and primary identity
-- One medium-blue accent for section headings, role titles, bullets, and divider rules
-- Muted gray for contact information, locations, and dates
+- One medium-blue accent for section headings, role titles, bullets, and subtle section accents
+- Muted gray for contact information, locations, dates, and engagement subtitles
 - Black body text for maximum readability
-- Consistent spacing and hierarchy across every section
+- Strong company → engagement → role → dates hierarchy for experience entries
+- Compact metadata spacing for certifications
 - No tables, columns, graphics, photos, text boxes, icons, or decorative elements that could interfere with ATS parsing
 
 The visual system is intentionally conservative: color is used to direct attention rather than decorate the page. This follows current ATS-oriented guidance emphasizing standard headings, readable fonts, simple single-column structure, and consistent formatting.
