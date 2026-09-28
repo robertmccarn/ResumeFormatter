@@ -13,13 +13,13 @@ from .optimizer import NORMAL_PROFILE, LayoutProfile
 
 FONT_NAME = "Arial"
 
-PAGE_MARGIN = Inches(0.65)
+PAGE_MARGIN = Inches(0.60)
 
-NAME_SIZE = Pt(21)
-HEADLINE_SIZE = Pt(11.5)
+NAME_SIZE = Pt(22)
+HEADLINE_SIZE = Pt(12)
 CONTACT_SIZE = Pt(9.5)
 META_SIZE = Pt(9.5)
-SUBTITLE_SIZE = Pt(10)
+SUBTITLE_SIZE = Pt(10.5)
 
 TAB_POSITION = Inches(7.2)
 
@@ -505,8 +505,11 @@ def render_resume(
     add_headline(document, resume.headline)
     add_summary(document, resume.summary, profile)
     add_skills(document, resume, profile)
-    add_education(document, resume, profile)
+    # Credentials are intentionally kept together before education on page 1.
+    # This matches the canonical resume hierarchy and keeps the lower-value
+    # education block compact at the bottom of the profile page.
     add_certifications(document, resume, profile)
+    add_education(document, resume, profile)
 
     document.add_page_break()
 
