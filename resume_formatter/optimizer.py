@@ -121,6 +121,7 @@ def optimize_layout(
     """
 
     previous_profile = NORMAL_PROFILE
+    fitting: list[tuple[float, LayoutProfile, LayoutReport]] = []
 
     for profile in LAYOUT_PROFILES:
         settings = profile_to_layout_settings(profile)
@@ -132,13 +133,48 @@ def optimize_layout(
         )
 
         if layout.fits_two_pages:
-            return OptimizationResult(
-                profile=profile,
-                layout=layout,
-                changed=profile != NORMAL_PROFILE,
+            # Prefer readable typography, but among profiles that fit,
+            # penalize excessive whitespace and large page-to-page density
+            # differences. This makes "two pages" a visual target, not merely
+            # a pagination constraint.
+            underfill_page_one = max(
+                0.0,
+                0.70 - layout.page_one_utilization,
+            )
+            underfill_page_two = max(
+                0.0,
+                0.70 - layout.page_two_utilization,
+            )
+            balance_penalty = layout.utilization_balance
+
+            # Compression is a small penalty; readability remains primary.
+            compression_penalty = {
+                "normal": 0.0,
+                "compact": 0.03,
+                "minimum-safe": 0.08,
+            }.get(profile.name, 0.05)
+
+            score = (
+                underfill_page_one * 3.0
+                + underfill_page_two * 3.0
+                + balance_penalty * 1.5
+                + compression_penalty
             )
 
+            fitting.append((score, profile, layout))
+
         previous_profile = profile
+
+    if fitting:
+        _, profile, layout = min(
+            fitting,
+            key=lambda item: item[0],
+        )
+        return OptimizationResult(
+            profile=profile,
+            layout=layout,
+            changed=profile != NORMAL_PROFILE,
+        )
 
     settings = profile_to_layout_settings(previous_profile)
 
