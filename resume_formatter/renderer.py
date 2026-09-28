@@ -474,13 +474,13 @@ def add_experience(
                 paragraph,
                 "• ",
                 bold=True,
-                size=Pt(profile.body_font_pt),
+                size=Pt(profile.experience_font_pt),
                 color=BLUE,
             )
             add_run(
                 paragraph,
                 bullet.text,
-                size=Pt(profile.body_font_pt),
+                size=Pt(profile.experience_font_pt),
             )
 
 
